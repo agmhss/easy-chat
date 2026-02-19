@@ -1,109 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExamEase AI | உங்கள் தேர்வுத்துணை</title>
+    <title>ExamEase AI | Groq Powered</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .chat-container { height: calc(100vh - 200px); }
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .chat-box { height: 65vh; scrollbar-width: thin; }
+        .user-msg { border-radius: 20px 20px 0 20px; }
+        .ai-msg { border-radius: 20px 20px 20px 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-anim { animation: fadeIn 0.3s ease-out forwards; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 font-sans">
+<body class="bg-slate-50 font-sans leading-relaxed">
 
-    <div class="max-w-2xl mx-auto p-4 h-screen flex flex-col">
-        <header class="text-center py-6">
-            <h1 class="text-3xl font-bold text-indigo-800">🎓 ExamEase AI</h1>
-            <p class="text-gray-600">Don't stress, just do your best! | பயப்படாதீர்கள், முயற்சி செய்யுங்கள்!</p>
-        </header>
-
-        <div class="mb-4">
-            <input type="password" id="apiKey" placeholder="Enter OpenAI API Key" 
-                   class="w-full p-2 rounded-lg border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+    <div class="max-w-3xl mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-700">🎓 ExamEase AI</h1>
+                <p class="text-slate-500 text-sm italic">Bilingual Student Mentor (Tamil/English)</p>
+            </div>
+            <div class="text-right">
+                <input type="password" id="groqKey" placeholder="Enter Groq API Key" 
+                       class="text-xs p-2 rounded border border-slate-200 focus:ring-1 focus:ring-indigo-400 outline-none w-48">
+            </div>
         </div>
 
-        <div id="chatWindow" class="chat-container glass rounded-2xl shadow-xl overflow-y-auto p-4 space-y-4 border border-white">
-            <div class="flex justify-start">
-                <div class="bg-indigo-600 text-white p-3 rounded-2xl rounded-bl-none max-w-[80%] shadow-md">
-                    Hello! I am your ExamEase Buddy. Need a study plan, a doubt cleared, or just someone to talk to? <br><br>
-                    வணக்கம்! நான் உங்கள் தேர்வுத் துணை. உங்களுக்கு படிப்புத் திட்டம் அல்லது மன அழுத்தம் குறைக்க உதவி வேண்டுமா?
+        <div id="chatWindow" class="chat-box overflow-y-auto space-y-4 mb-6 px-2">
+            <div class="flex justify-start msg-anim">
+                <div class="bg-indigo-600 text-white p-4 ai-msg shadow-md max-w-[85%]">
+                    வணக்கம்! நான் உங்கள் தேர்வுத் துணை. எதைப்பற்றி வேண்டுமானாலும் கேளுங்கள். <br>
+                    (Hello! I'm your ExamEase buddy. Feel free to ask anything about your studies or stress.)
                 </div>
             </div>
         </div>
 
-        <div class="mt-4 flex gap-2">
-            <input type="text" id="userInput" placeholder="Type here... / இங்கே தட்டச்சு செய்க..." 
-                   class="flex-1 p-4 rounded-full shadow-lg border-none focus:ring-2 focus:ring-indigo-500 outline-none">
-            <button onclick="sendMessage()" class="bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700 transition">
-                <i class="fas fa-paper-plane"></i>
-            </button>
+        <div class="relative bg-white rounded-3xl shadow-xl p-2 border border-slate-100">
+            <div class="flex items-center">
+                <input type="text" id="userInput" 
+                       placeholder="Ask about tips, plans, or doubts..." 
+                       class="flex-1 py-4 px-6 bg-transparent outline-none text-slate-700">
+                
+                <button onclick="toggleSpeech()" id="speechBtn" class="p-3 text-slate-400 hover:text-indigo-600 transition" title="Toggle Voice Output">
+                    <i class="fas fa-volume-up text-xl" id="speakerIcon"></i>
+                </button>
+
+                <button onclick="sendMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full transition shadow-lg">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         const chatWindow = document.getElementById('chatWindow');
         const userInput = document.getElementById('userInput');
-        const apiKeyInput = document.getElementById('apiKey');
+        const groqKey = document.getElementById('groqKey');
+        let isSpeechEnabled = true;
+
+        // Voice Toggle Logic
+        function toggleSpeech() {
+            isSpeechEnabled = !isSpeechEnabled;
+            document.getElementById('speakerIcon').className = isSpeechEnabled ? "fas fa-volume-up text-xl" : "fas fa-volume-mute text-xl";
+            if (!isSpeechEnabled) window.speechSynthesis.cancel();
+        }
 
         async function sendMessage() {
-            const text = userInput.value.trim();
-            const apiKey = apiKeyInput.value.trim();
+            const prompt = userInput.value.trim();
+            const apiKey = groqKey.value.trim();
 
-            if (!text) return;
-            if (!apiKey) {
-                alert("Please enter your API Key first!");
-                return;
-            }
+            if (!prompt) return;
+            if (!apiKey) { alert("Please enter your Groq API Key!"); return; }
 
-            // Append User Message
-            appendMessage(text, 'user');
+            // Display User Message
+            appendMsg(prompt, 'user');
             userInput.value = '';
 
             try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: "gpt-4o",
+                        model: "llama-3.3-70b-versatile",
                         messages: [
-                            { role: "system", content: "You are ExamEase AI, a supportive mentor for students. Speak in English and Tamil. Give exam tips, study plans, and emotional support." },
-                            { role: "user", content: text }
-                        ]
+                            { 
+                                role: "system", 
+                                content: "You are ExamEase AI. A mentor for students facing exams. Give exam tips, clear doubts, and help reduce stress. Respond naturally in a mix of Tamil and English (Tanglish) or pure Tamil/English as requested. Be empathetic and encouraging." 
+                            },
+                            { role: "user", content: prompt }
+                        ],
+                        temperature: 0.7
                     })
                 });
 
                 const data = await response.json();
                 const aiText = data.choices[0].message.content;
-                appendMessage(aiText, 'ai');
+                
+                appendMsg(aiText, 'ai');
+                if (isSpeechEnabled) speak(aiText);
+
             } catch (error) {
-                appendMessage("Error: Could not connect to AI. Check your key.", 'ai');
+                appendMsg("System Error: Could not connect to Groq. Please check your connection and Key.", 'ai');
             }
         }
 
-        function appendMessage(text, sender) {
-            const div = document.createElement('div');
-            div.className = sender === 'user' ? 'flex justify-end' : 'flex justify-start';
+        function appendMsg(text, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.className = sender === 'user' ? 'flex justify-end msg-anim' : 'flex justify-start msg-anim';
             
-            const innerDiv = document.createElement('div');
-            innerDiv.className = sender === 'user' 
-                ? 'bg-white text-gray-800 p-3 rounded-2xl rounded-br-none max-w-[80%] shadow-md border border-indigo-100'
-                : 'bg-indigo-600 text-white p-3 rounded-2xl rounded-bl-none max-w-[80%] shadow-md';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = sender === 'user' 
+                ? 'bg-white text-slate-800 p-4 user-msg shadow-sm border border-slate-200 max-w-[85%]' 
+                : 'bg-indigo-600 text-white p-4 ai-msg shadow-md max-w-[85%]';
             
-            innerDiv.innerText = text;
-            div.appendChild(innerDiv);
-            chatWindow.appendChild(div);
+            msgDiv.innerText = text;
+            wrapper.appendChild(msgDiv);
+            chatWindow.appendChild(wrapper);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        // Allow 'Enter' key to send
-        userInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") sendMessage();
-        });
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            // Try to find a Tamil or Indian English voice
+            const voices = window.speechSynthesis.getVoices();
+            const tamilVoice = voices.find(v => v.lang.includes('ta')) || voices.find(v => v.lang.includes('IN'));
+            if (tamilVoice) utterance.voice = tamilVoice;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
     </script>
 </body>
 </html>
