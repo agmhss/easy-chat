@@ -52,13 +52,7 @@
                 </button>
             </div>
         </div>
-    </div>
-<button onclick="downloadPDF()" class="no-print w-full bg-rose-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-rose-700 flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download Final PDF
-            </button>
+    
     <script>
         const chatWindow = document.getElementById('chatWindow');
         const userInput = document.getElementById('userInput');
@@ -139,18 +133,7 @@
         }
 
         userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
-        // PDF Export Logic
-    function downloadPDF() {
-        const element = document.getElementById('letter-preview');
-        const opt = {
-            margin: 0,
-            filename: 'Official_Letter.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save();
-    }
+        
     </script>
 </body>
 </html>
